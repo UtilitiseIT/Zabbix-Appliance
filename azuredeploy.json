@@ -212,10 +212,10 @@
 					"azureFile": {
 						"shareName": "zabbix",
 						"storageAccountName": "[parameters('StorageAccountName')]",
-						"storageAccountKey": "[listKeys(variables('storageAccountId'), '2019-04-01').keys[0].value]"
+						"storageAccountKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value]"
 					}
 				}
 			]
-		},
+		}
 	]
 }
