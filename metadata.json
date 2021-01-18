@@ -1,0 +1,7 @@
+{
+    "itemDisplayName": "ACI Zabbix Appliance",
+    "description": "This template creates a Zabbix Appliance running in an Azure Container Instance.",
+    "summary": "Create a cluster and a zabbix appliance server for monitoring.",
+    "githubUsername": "tomjdickson",
+    "dateUpdated": "2021-01-18"
+}

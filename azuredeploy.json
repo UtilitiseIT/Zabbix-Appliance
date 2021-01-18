@@ -1,0 +1,220 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"ContainerGroupsName": {
+            "type": "string",
+            "metadata": {
+            	"description": "Name for the container and group."
+            }
+        },
+        "StorageAccountName": {
+            "type": "string",
+            "metadata": {
+            	"description": "Storage Account Name will be auto generated."
+            }
+        },
+        "location": {
+			"type": "string",
+			"defaultValue": "[resourceGroup().location]",
+            "metadata": {
+            	"description": "Location for all resources."
+            }
+		},
+		"PHP_TZ": {
+			"type": "string",
+			"metadata": {
+            	"description": "The variable is timezone in PHP format. Full list of supported timezones are available on php.net. By default, value is 'Australia/Melbourne'."
+			},
+			"defaultValue": "Australia/Melbourne",
+			"allowedValues": [
+				"Australia/Melbourne",
+				"Australia/Adelaide",
+				"Australia/Brisbane",
+				"Australia/Broken_Hill",
+				"Australia/Currie",
+				"Australia/Darwin",
+				"Australia/Eucla",
+				"Australia/Hobart",
+				"Australia/Lindeman",
+				"Australia/Lord_Howe",
+				"Australia/Perth",
+				"Australia/Sydney"
+			  ]
+		},
+		"ZBX_DEBUGLEVEL": {
+			"type": "string",
+			"metadata": {
+				"description": "The variable is used to specify debug level. By default, value is 3. It is DebugLevel parameter in zabbix_server.conf."
+			},
+			"defaultValue": "3",
+			"allowedValues": [
+				"0",
+				"1",
+				"2",
+				"3",
+				"4",
+				"5"
+			]
+		},
+		"ZBX_TIMEOUT": {
+			"type": "string",
+			"metadata": {
+				"description": "The variable is used to specify timeout for processing checks. By default, value is 4."
+			},
+			"defaultValue": "4"
+		},
+		"ZBX_SERVER_NAME": {
+			"type": "string",
+			"metadata": {
+				"description": ""
+			}
+		}
+	},
+	"variables": {
+		"subnetName": "default",
+		"storageAccountID": "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName'))]"
+	},
+	"resources": [
+		{
+			"type": "Microsoft.ContainerInstance/containerGroups",
+			"apiVersion": "2018-10-01",
+			"name": "[parameters('ContainerGroupsName')]",
+			"location": "[parameters('location')]",
+			"dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/fileServices', parameters('StorageAccountName'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName'))]"
+            ],
+			"properties": {
+				"osType": "Linux",
+				"restartPolicy": "Always",
+				"containers": [
+					{
+                        "name": "[parameters('ContainerGroupsName')]",
+                        "properties": {
+                            "image": "registry.connect.redhat.com/zabbix/zabbix-appliance",
+                            "ports": [
+                                {
+                                    "protocol": "TCP",
+                                    "port": 8080
+                                },
+                                {
+                                    "protocol": "TCP",
+                                    "port": 8443
+                                },
+                                {
+                                    "protocol": "TCP",
+                                    "port": 10051
+                                }
+                            ],
+                            "environmentVariables": [
+								{
+									"name": "PHP_TZ",
+									"value": "[parameters('PHP_TZ')]"
+								},
+								{
+									"name": "ZBX_DEBUGLEVEL",
+									"value": "[parameters('ZBX_DEBUGLEVEL')]"
+								},
+								{
+									"name": "ZBX_TIMEOUT",
+									"value": "[parameters('ZBX_TIMEOUT')]"
+								},
+								{
+									"name": "ZBX_SERVER_NAME",
+									"value": "[parameters('ZBX_SERVER_NAME')]"
+								}
+							],
+                            "resources": {
+                                "requests": {
+                                    "memoryInGB": 1.5,
+                                    "cpu": 1
+                                }
+                            },
+                            "volumeMounts": [
+                                {
+                                    "name": "azurefile",
+                                    "mountPath": "/zabbix/"
+                                }
+                            ]
+                        }
+                    }
+				]
+			},
+			"volumes": [
+				{
+					"name": "azurefile",
+					"azureFile": {
+						"shareName": "zabbix",
+						"storageAccountName": "[parameters('StorageAccountName')]",
+						"storageAccountKey": "[listKeys(variables('storageAccountId'), '2019-04-01').keys[0].value]"
+					}
+				}
+			]
+		},
+		{
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2019-06-01",
+            "name": "[parameters('StorageAccountName')]",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "kind": "StorageV2",
+            "properties": {
+                "largeFileSharesState": "Disabled",
+                "networkAcls": {
+                    "bypass": "AzureServices",
+                    "virtualNetworkRules": [],
+                    "ipRules": [],
+                    "defaultAction": "Allow"
+                },
+                "supportsHttpsTrafficOnly": true,
+                "encryption": {
+                    "services": {
+                        "file": {
+                            "keyType": "Account",
+                            "enabled": true
+                        },
+                        "blob": {
+                            "keyType": "Account",
+                            "enabled": true
+                        }
+                    },
+                    "keySource": "Microsoft.Storage"
+                },
+                "accessTier": "Hot"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/fileServices",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(parameters('StorageAccountName'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName'))]"
+            ],
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "properties": {
+                "cors": {
+                    "corsRules": []
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(parameters('StorageAccountName'), '/default/zabbix')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/fileServices', parameters('StorageAccountName'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName'))]"
+            ],
+            "properties": {
+                "shareQuota": 1
+            }
+        }
+	]
+}
