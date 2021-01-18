@@ -4,12 +4,6 @@
     "parameters": {
       "ContainerGroupsName": {
         "value": "zabbix-appliance"
-      },
-      "StorageAccountName": {
-        "value": "[uniqueString( utcNow('u') )]"
-      },
-      "location": {
-        "value": "[resourceGroup().location]"
       }
     }
   }

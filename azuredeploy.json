@@ -9,13 +9,15 @@
             }
         },
         "StorageAccountName": {
-            "type": "string",
+			"type": "string",
+			"defaultValue": "[uniqueString( utcNow('u') )]",
             "metadata": {
             	"description": "Storage Account Name will be auto generated."
             }
         },
         "location": {
 			"type": "string",
+			"defaultValue": "[resourceGroup().location]",
             "metadata": {
             	"description": "Location for all resources."
             }
