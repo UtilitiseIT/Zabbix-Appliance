@@ -153,6 +153,33 @@
 			"properties": {
 				"osType": "Linux",
 				"restartPolicy": "Always",
+				"volumes": [
+					{
+						"name": "azurefile",
+						"azureFile": {
+							"shareName": "zabbix",
+							"storageAccountName": "[parameters('StorageAccountName')]",
+							"storageAccountKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value]"
+						}
+					}
+				],
+				"ipAddress": {
+                    "ports": [
+                        {
+							"protocol": "TCP",
+							"port": 8080
+						},
+						{
+							"protocol": "TCP",
+							"port": 8443
+						},
+						{
+							"protocol": "TCP",
+							"port": 10051
+						}
+                    ],
+                    "type": "Public"
+                },
 				"containers": [
 					{
                         "name": "[parameters('ContainerGroupsName')]",
@@ -201,21 +228,11 @@
                                     "name": "azurefile",
                                     "mountPath": "/zabbix/"
                                 }
-                            ]
+							]
                         }
                     }
 				]
-			},
-			"volumes": [
-				{
-					"name": "azurefile",
-					"azureFile": {
-						"shareName": "zabbix",
-						"storageAccountName": "[parameters('StorageAccountName')]",
-						"storageAccountKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value]"
-					}
-				}
-			]
+			}
 		}
 	]
 }
