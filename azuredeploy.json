@@ -22,6 +22,18 @@
             	"description": "Location for all resources."
             }
 		},
+		"ImageRegistryUsername": {
+			"type": "string",
+			"metadata": {
+				"description": "Username for the Image Registry"
+			}
+		},
+		"ImageRegistryPassword": {
+			"type": "securestring",
+			"metadata": {
+				"description": "Password for the Image Registry"
+			}
+		},
 		"PHP_TZ": {
 			"type": "string",
 			"metadata": {
@@ -179,12 +191,19 @@
 						}
                     ],
                     "type": "Public"
-                },
+				},
+				"imageRegistryCredentials": [
+					{
+					  "server": "registry.connect.redhat.com",
+					  "username": "[parameters('ImageRegistryUsername')]",
+					  "password": "[parameters('ImageRegistryPassword')]"
+					}
+				],
 				"containers": [
 					{
                         "name": "[parameters('ContainerGroupsName')]",
                         "properties": {
-                            "image": "registry.connect.redhat.com/zabbix/zabbix-appliance",
+                            "image": "registry.connect.redhat.com/zabbix/zabbix-appliance-50",
                             "ports": [
                                 {
                                     "protocol": "TCP",
